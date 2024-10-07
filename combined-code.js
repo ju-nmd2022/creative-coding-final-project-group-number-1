@@ -55,11 +55,11 @@ function draw() {
 // Function to draw the pulsating orb
 function drawPulsatingOrb(xCenter, yCenter, radius, numPoints) {
   // Change color to red if the radius exceeds 60
-  if (radius > 50) {
+  if (radius > 60) {
     Rcolor = 255;
     Gcolor = 0;
     Bcolor = 0; // Red
-  } else {
+  } else if (radius < 60) {
     Rcolor = 255;
     Gcolor = 255;
     Bcolor = 255; // White
