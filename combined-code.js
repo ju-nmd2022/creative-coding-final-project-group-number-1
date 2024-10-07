@@ -11,14 +11,14 @@ function setup() {
   createCanvas(800, 800); // Main canvas for the pulsating orb and video
   background(0);
 
-  // Initialize random colors for the pulsating orb
-  Rcolor = random(0, 255);
-  Gcolor = random(0, 255);
-  Bcolor = random(0, 255);
+  // Initialize white color for the pulsating orb
+  Rcolor = 255;
+  Gcolor = 255;
+  Bcolor = 255;
 
   // Pulsating orb settings
   baseRadius = 10;
-  maxRadius = 50;
+  maxRadius = 100;
 
   // Set up video capture and PoseNet
   video = createCapture(VIDEO);
@@ -54,6 +54,17 @@ function draw() {
 
 // Function to draw the pulsating orb
 function drawPulsatingOrb(xCenter, yCenter, radius, numPoints) {
+  // Change color to red if the radius exceeds 60
+  if (radius > 50) {
+    Rcolor = 255;
+    Gcolor = 0;
+    Bcolor = 0; // Red
+  } else {
+    Rcolor = 255;
+    Gcolor = 255;
+    Bcolor = 255; // White
+  }
+
   let angleStep = TWO_PI / numPoints;
   for (let i = 0; i < numPoints; i++) {
     let angle = i * angleStep;
