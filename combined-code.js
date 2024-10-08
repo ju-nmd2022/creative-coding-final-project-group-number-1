@@ -43,6 +43,9 @@ function modelReady() {
 function draw() {
   background(0, 20); // Fading background for orb trail effect
 
+  // Update the baseRadius and maxRadius based on keypoints
+  updateOrbSize();
+
   // Pulsating orb animation on the main canvas
   let radius =
     baseRadius + abs(sin(frameCount * pulseSpeed)) * (maxRadius - baseRadius); // Using abs(sin()) to keep radius positive
@@ -56,6 +59,42 @@ function draw() {
 
   // Display the PoseNet video and keypoints in the top-right corner
   drawPoseNetVideo();
+}
+
+// Function to update the baseRadius and maxRadius based on the area covered by the keypoints
+function updateOrbSize() {
+  if (poses.length > 0) {
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
+
+    // Calculate the bounding box of all keypoints
+    for (let i = 0; i < poses.length; i++) {
+      let pose = poses[i].pose;
+      for (let j = 0; j < pose.keypoints.length; j++) {
+        let keypoint = pose.keypoints[j];
+        if (keypoint.score > 0.1) {
+          // Only consider keypoints with a certain score
+          minX = min(minX, keypoint.position.x);
+          minY = min(minY, keypoint.position.y);
+          maxX = max(maxX, keypoint.position.x);
+          maxY = max(maxY, keypoint.position.y);
+        }
+      }
+    }
+
+    // Calculate the width and height of the bounding box
+    let width = maxX - minX;
+    let height = maxY - minY;
+
+    // Calculate the area of the bounding box
+    let area = width * height;
+
+    // Map the area to the baseRadius and maxRadius
+    baseRadius = map(area, 0, 640 * 480, 10, 100); // Adjust the values as needed
+    maxRadius = map(area, 0, 640 * 480, 20, 200); // Adjust the values as needed
+  }
 }
 
 // Function to draw the pulsating orb
