@@ -4,7 +4,7 @@ let poses = [];
 
 let baseRadius;
 let maxRadius;
-let pulseSpeed = 0.025;
+let pulseSpeed = 0.0075;
 
 let coldColor, hotColor; // Define the cold and hot colors
 
@@ -91,9 +91,16 @@ function updateOrbSize() {
     // Calculate the area of the bounding box
     let area = width * height;
 
-    // Map the area to the baseRadius and maxRadius
-    baseRadius = map(area, 0, 640 * 480, 10, 100); // Adjust the values as needed
-    maxRadius = map(area, 0, 640 * 480, 20, 200); // Adjust the values as needed
+    // Exaggeration factor for baseRadius and maxRadius
+    let exaggerationFactor = 2;
+
+    // Map the area to the baseRadius and maxRadius with exaggeration
+    baseRadius = map(area, 0, 640 * 480, 10, 100) * exaggerationFactor; // Adjust the values as needed
+    maxRadius = map(area, 0, 640 * 480, 20, 200) * exaggerationFactor; // Adjust the values as needed
+
+    // Optional: Clamp the radius to avoid excessive sizes
+    baseRadius = constrain(baseRadius, 10, 200); // Set minimum and maximum limits
+    maxRadius = constrain(maxRadius, 20, 300); // Set minimum and maximum limits
   }
 }
 
