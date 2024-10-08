@@ -5,26 +5,20 @@ let poses = [];
 let baseRadius;
 let maxRadius;
 let pulseSpeed = 0.025;
-let Rcolor, Gcolor, Bcolor;
-let insideSquare = true; // Track whether the orb is inside the square
 
-let squareSize; // Size of the square boundary
+let coldColor, hotColor; // Define the cold and hot colors
 
 function setup() {
   createCanvas(800, 800); // Main canvas for the pulsating orb and video
   background(0);
 
-  // Initialize white color for the pulsating orb
-  Rcolor = 0;
-  Gcolor = 255;
-  Bcolor = 0;
-
   // Pulsating orb settings
   baseRadius = 10;
   maxRadius = 100;
 
-  // Define the square size for color change
-  squareSize = 100; // Size of the square (adjust as needed)
+  // Define the color gradient: coldColor (blue) and hotColor (red)
+  coldColor = color(0, 0, 255); // Blue
+  hotColor = color(255, 0, 0); // Red
 
   // Set up video capture and PoseNet
   video = createCapture(VIDEO);
@@ -49,54 +43,35 @@ function modelReady() {
 function draw() {
   background(0, 20); // Fading background for orb trail effect
 
-  // Draw the square boundary (as a visual aid)
-  stroke(255);
-  strokeWeight(2);
-  noFill();
-  rectMode(CENTER); // Draw the square from the center
-  rect(width / 2, height / 2, squareSize, squareSize); // Draw the square
-
   // Pulsating orb animation on the main canvas
   let radius =
-    baseRadius + sin(frameCount * pulseSpeed) * (maxRadius - baseRadius);
-  drawPulsatingOrb(width / 2, height / 2, radius, 100);
+    baseRadius + abs(sin(frameCount * pulseSpeed)) * (maxRadius - baseRadius); // Using abs(sin()) to keep radius positive
+
+  // Map the radius to a color scale from coldColor to hotColor
+  let t = map(radius, baseRadius, maxRadius, 0, 1); // `t` is the interpolation factor between 0 and 1
+  let orbColor = lerpColor(coldColor, hotColor, t); // Interpolates between blue and red
+
+  // Draw the pulsating orb with the interpolated color
+  drawPulsatingOrb(width / 2, height / 2, radius, 100, orbColor);
 
   // Display the PoseNet video and keypoints in the top-right corner
   drawPoseNetVideo();
 }
 
 // Function to draw the pulsating orb
-function drawPulsatingOrb(xCenter, yCenter, radius, numPoints) {
-  // Determine if the orb's radius is larger or smaller than the square's half size
-  let isLarger = radius > squareSize / 2;
-
-  // If the orb crosses the boundary from inside to outside, or vice versa, change the color
-  if (isLarger && insideSquare) {
-    // Orb has grown larger than the square, change to red
-    console.log(color);
-    Rcolor = 255;
-    Gcolor = 0;
-    Bcolor = 0; // Red when the orb is larger than the square
-    insideSquare = false; // Mark that the orb is now outside the square
-  } else if (!isLarger && !insideSquare) {
-    // Orb has shrunk smaller than the square, change to green
-    Rcolor = 0;
-    Gcolor = 255;
-    Bcolor = 0; // Green when the orb is smaller than the square
-    insideSquare = true; // Mark that the orb is now inside the square
-  }
-
-  // Drawing the pulsating orb
+function drawPulsatingOrb(xCenter, yCenter, radius, numPoints, orbColor) {
   let angleStep = TWO_PI / numPoints;
   for (let i = 0; i < numPoints; i++) {
     let angle = i * angleStep;
+
+    // Adding noise to adjust the radius for each point
     let noiseFactor = noise(i * 0.1, frameCount * 0.01);
-    let adjustedRadius = radius + map(noiseFactor, 0, 1, -10, 10);
+    let adjustedRadius = radius + map(noiseFactor, 0, 1, -10, 10); // Randomly adjust radius with noise
 
     let x = xCenter + cos(angle) * adjustedRadius;
     let y = yCenter + sin(angle) * adjustedRadius;
 
-    fill(Rcolor, Gcolor, Bcolor);
+    fill(orbColor);
     noStroke();
     ellipse(x, y, 5, 5);
   }
@@ -131,7 +106,6 @@ function drawKeypoints(xOffset, yOffset) {
     }
   }
 }
-
 
 // Function to draw skeletons
 function drawSkeleton(xOffset, yOffset) {
