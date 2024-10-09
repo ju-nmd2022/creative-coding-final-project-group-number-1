@@ -54,14 +54,21 @@ function draw() {
   let radius =
     baseRadius + abs(sin(frameCount * pulseSpeed)) * (maxRadius - baseRadius); // Using abs(sin()) to keep radius positive
 
-  // Map the radius to a color scale from coldColor to hotColor
-  let t = map(radius, baseRadius, maxRadius, 0, 1); // `t` is the interpolation factor between 0 and 1
+  // Debug statement to see the radius
+  console.log(`Radius: ${radius}`);
+
   // Define a threshold for the radius to change color
-  let colorThreshold = maxRadius * 0.99; // Change color only when radius exceeds 80% of maxRadius
+  let colorThreshold = 130; // Threshold for changing color
 
   // Map the radius to a color scale only if it exceeds the threshold
-  let t =
-    radius > colorThreshold ? map(radius, colorThreshold, maxRadius, 0, 1) : 0; // `t` is 0 if below threshold
+  let t = 0; // Initialize t
+  if (radius > colorThreshold) {
+    t = map(radius, colorThreshold, maxRadius, 0, 1);
+  }
+
+  // Debug statement for color transition value
+  console.log(`t: ${t}`);
+
   let orbColor = lerpColor(coldColor, hotColor, t); // Interpolates between blue and red
 
   // Draw the pulsating orb with the interpolated color
@@ -71,7 +78,6 @@ function draw() {
   drawPoseNetVideo();
 }
 
-// Function to update the baseRadius and maxRadius based on the area covered by the keypoints and movement speed
 function updateOrbSize() {
   if (poses.length > 0) {
     let minX = Infinity,
@@ -116,11 +122,10 @@ function updateOrbSize() {
       transitionFactor
     );
 
-    // Optional: Clamp the radius to avoid excessive sizes
-    // baseRadius = constrain(baseRadius, 10, 650); // Set minimum and maximum limits
-    // maxRadius = constrain(maxRadius, 20, 700); // Set minimum and maximum limits
+    // Clamp maxRadius to ensure it's large enough
+    maxRadius = constrain(maxRadius, 100, 600); // Example range
 
-    // Adjust the transition factor based on speed
+    // Optional: Adjust the transition factor based on speed
     updateTransitionSpeedWithMovement();
   }
 }
