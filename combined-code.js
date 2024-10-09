@@ -4,9 +4,13 @@ let poses = [];
 
 let baseRadius;
 let maxRadius;
-let pulseSpeed = 0.0075;
+let pulseSpeed = 0.0075; // Initial pulse speed factor
 
 let coldColor, hotColor; // Define the cold and hot colors
+
+let previousKeypoints = []; // To store keypoints from the previous frame
+let movementSpeed = 0; // Average speed of keypoints
+let transitionFactor = 0.02; // Factor to adjust how fast size changes
 
 function setup() {
   createCanvas(800, 800); // Main canvas for the pulsating orb and video
@@ -43,7 +47,7 @@ function modelReady() {
 function draw() {
   background(0, 20); // Fading background for orb trail effect
 
-  // Update the baseRadius and maxRadius based on keypoints
+  // Update the baseRadius and maxRadius based on keypoints and their speed
   updateOrbSize();
 
   // Pulsating orb animation on the main canvas
@@ -61,7 +65,7 @@ function draw() {
   drawPoseNetVideo();
 }
 
-// Function to update the baseRadius and maxRadius based on the area covered by the keypoints
+// Function to update the baseRadius and maxRadius based on the area covered by the keypoints and movement speed
 function updateOrbSize() {
   if (poses.length > 0) {
     let minX = Infinity,
@@ -92,16 +96,65 @@ function updateOrbSize() {
     let area = width * height;
 
     // Exaggeration factor for baseRadius and maxRadius
-    let exaggerationFactor = 2;
+    let exaggerationFactor = 4;
 
     // Map the area to the baseRadius and maxRadius with exaggeration
-    baseRadius = map(area, 0, 640 * 480, 10, 100) * exaggerationFactor; // Adjust the values as needed
-    maxRadius = map(area, 0, 640 * 480, 20, 200) * exaggerationFactor; // Adjust the values as needed
+    baseRadius = lerp(
+      baseRadius,
+      map(area, 0, 640 * 480, 10, 100) * exaggerationFactor,
+      transitionFactor
+    );
+    maxRadius = lerp(
+      maxRadius,
+      map(area, 0, 640 * 480, 20, 200) * exaggerationFactor,
+      transitionFactor
+    );
 
     // Optional: Clamp the radius to avoid excessive sizes
-    baseRadius = constrain(baseRadius, 10, 200); // Set minimum and maximum limits
-    maxRadius = constrain(maxRadius, 20, 300); // Set minimum and maximum limits
+    // baseRadius = constrain(baseRadius, 10, 650); // Set minimum and maximum limits
+    // maxRadius = constrain(maxRadius, 20, 700); // Set minimum and maximum limits
+
+    // Adjust the transition factor based on speed
+    updateTransitionSpeedWithMovement();
   }
+}
+
+// Function to adjust the transition factor based on keypoint movement speed
+function updateTransitionSpeedWithMovement() {
+  if (poses.length > 0 && previousKeypoints.length > 0) {
+    let totalSpeed = 0;
+    let count = 0;
+
+    // Loop through each keypoint and calculate speed
+    for (let i = 0; i < poses.length; i++) {
+      let pose = poses[i].pose;
+      for (let j = 0; j < pose.keypoints.length; j++) {
+        let keypoint = pose.keypoints[j];
+        let previousKeypoint = previousKeypoints[i]?.pose?.keypoints[j];
+
+        if (keypoint && previousKeypoint && keypoint.score > 0.1) {
+          // Calculate distance moved
+          let dx = keypoint.position.x - previousKeypoint.position.x;
+          let dy = keypoint.position.y - previousKeypoint.position.y;
+          let distance = sqrt(dx * dx + dy * dy); // Euclidean distance
+
+          totalSpeed += distance;
+          count++;
+        }
+      }
+    }
+
+    // Calculate the average speed
+    if (count > 0) {
+      movementSpeed = totalSpeed / count;
+    }
+
+    // Map movement speed to the transition factor (how fast the size changes)
+    transitionFactor = map(movementSpeed, 0, 100, 0.01, 0.3); // Increased max value for more sensitivity
+  }
+
+  // Store the current keypoints for the next frame
+  previousKeypoints = poses;
 }
 
 // Function to draw the pulsating orb
