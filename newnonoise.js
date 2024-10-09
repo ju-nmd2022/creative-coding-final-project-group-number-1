@@ -4,13 +4,13 @@ let poses = [];
 
 let baseRadius;
 let maxRadius;
-let pulseSpeed = 0.0075; // Initial pulse speed factor
+let noiseFactor = 0; // Initial noise factor for the radius
 
 let coldColor, hotColor; // Define the cold and hot colors
 
 let previousKeypoints = []; // To store keypoints from the previous frame
 let movementSpeed = 0; // Average speed of keypoints
-let transitionFactor = 0.02; // Factor to adjust how fast size changes
+let transitionFactor = 0.05; // Factor to adjust how fast size changes
 
 function setup() {
   createCanvas(800, 800); // Main canvas for the pulsating orb and video
@@ -50,12 +50,16 @@ function draw() {
   // Update the baseRadius and maxRadius based on keypoints and their speed
   updateOrbSize();
 
-  // Pulsating orb animation on the main canvas
-  let radius =
-    baseRadius + abs(sin(frameCount * pulseSpeed)) * (maxRadius - baseRadius); // Using abs(sin()) to keep radius positive
+  // Calculate the radius using noise
+  noiseFactor += 0.01; // Increment noise factor for variety
+  let radius = baseRadius + noise(noiseFactor) * (maxRadius - baseRadius); // Random radius based on noise
 
-  // Map the radius to a color scale from coldColor to hotColor
-  let t = map(radius, baseRadius, maxRadius, 0, 1); // `t` is the interpolation factor between 0 and 1
+  // Define a threshold for the radius to change color
+  let colorThreshold = maxRadius * 0.8; // Change color only when radius exceeds 80% of maxRadius
+
+  // Map the radius to a color scale only if it exceeds the threshold
+  let t =
+    radius > colorThreshold ? map(radius, colorThreshold, maxRadius, 0, 1) : 0; // `t` is 0 if below threshold
   let orbColor = lerpColor(coldColor, hotColor, t); // Interpolates between blue and red
 
   // Draw the pulsating orb with the interpolated color
@@ -95,32 +99,27 @@ function updateOrbSize() {
     // Calculate the area of the bounding box
     let area = width * height;
 
-    // Exaggeration factor for baseRadius and maxRadius
-    let exaggerationFactor = 4;
+    // Exaggeration factors for baseRadius and maxRadius
+    let areaExaggerationFactor = 5; // Increase impact of area on radius
+    let speedExaggerationFactor = 0.5; // Increase impact of speed on radius
 
-    // Map the area to the baseRadius and maxRadius with exaggeration
-    baseRadius = lerp(
-      baseRadius,
-      map(area, 0, 640 * 480, 10, 100) * exaggerationFactor,
-      transitionFactor
-    );
-    maxRadius = lerp(
-      maxRadius,
-      map(area, 0, 640 * 480, 20, 200) * exaggerationFactor,
-      transitionFactor
-    );
+    // Calculate area-based size changes
+    let newBaseRadius =
+      map(area, 0, 640 * 480, 10, 100) * areaExaggerationFactor;
+    let newMaxRadius =
+      map(area, 0, 640 * 480, 20, 200) * areaExaggerationFactor;
 
-    // Optional: Clamp the radius to avoid excessive sizes
-    // baseRadius = constrain(baseRadius, 10, 650); // Set minimum and maximum limits
-    // maxRadius = constrain(maxRadius, 20, 700); // Set minimum and maximum limits
+    // Lerp to smoothly transition to new sizes
+    baseRadius = lerp(baseRadius, newBaseRadius, transitionFactor);
+    maxRadius = lerp(maxRadius, newMaxRadius, transitionFactor);
 
     // Adjust the transition factor based on speed
-    updateTransitionSpeedWithMovement();
+    updateTransitionSpeedWithMovement(speedExaggerationFactor);
   }
 }
 
 // Function to adjust the transition factor based on keypoint movement speed
-function updateTransitionSpeedWithMovement() {
+function updateTransitionSpeedWithMovement(speedExaggerationFactor) {
   if (poses.length > 0 && previousKeypoints.length > 0) {
     let totalSpeed = 0;
     let count = 0;
@@ -150,7 +149,8 @@ function updateTransitionSpeedWithMovement() {
     }
 
     // Map movement speed to the transition factor (how fast the size changes)
-    transitionFactor = map(movementSpeed, 0, 100, 0.01, 0.3); // Increased max value for more sensitivity
+    transitionFactor =
+      map(movementSpeed, 0, 100, 0.01, 0.5) * speedExaggerationFactor; // Increased max value for more sensitivity
   }
 
   // Store the current keypoints for the next frame
@@ -163,9 +163,8 @@ function drawPulsatingOrb(xCenter, yCenter, radius, numPoints, orbColor) {
   for (let i = 0; i < numPoints; i++) {
     let angle = i * angleStep;
 
-    // Adding noise to adjust the radius for each point
-    let noiseFactor = noise(i * 0.1, frameCount * 0.01);
-    let adjustedRadius = radius + map(noiseFactor, 0, 1, -10, 10); // Randomly adjust radius with noise
+    // Adjusted radius with noise effect
+    let adjustedRadius = radius; // Use noise effect already included in radius calculation
 
     let x = xCenter + cos(angle) * adjustedRadius;
     let y = yCenter + sin(angle) * adjustedRadius;
