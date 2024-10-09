@@ -54,8 +54,12 @@ function draw() {
   let radius =
     baseRadius + abs(sin(frameCount * pulseSpeed)) * (maxRadius - baseRadius); // Using abs(sin()) to keep radius positive
 
-  // Map the radius to a color scale from coldColor to hotColor
-  let t = map(radius, baseRadius, maxRadius, 0, 1); // `t` is the interpolation factor between 0 and 1
+  // Define a threshold for the radius to change color
+  let colorThreshold = maxRadius * 0.9; // Change color only when radius exceeds 80% of maxRadius
+
+  // Map the radius to a color scale only if it exceeds the threshold
+  let t =
+    radius > colorThreshold ? map(radius, colorThreshold, maxRadius, 0, 1) : 0; // `t` is 0 if below threshold
   let orbColor = lerpColor(coldColor, hotColor, t); // Interpolates between blue and red
 
   // Draw the pulsating orb with the interpolated color
@@ -96,7 +100,7 @@ function updateOrbSize() {
     let area = width * height;
 
     // Exaggeration factor for baseRadius and maxRadius
-    let exaggerationFactor = 4;
+    let exaggerationFactor = 3;
 
     // Map the area to the baseRadius and maxRadius with exaggeration
     baseRadius = lerp(
@@ -192,7 +196,7 @@ function giveOrbPersonality(radius, orbColor) {
     probability = 0.8; // High probability when orb is large
   } else if (radius < smallThreshold) {
     probability = 0.0005; // Low probability when orb is small
-  } 
+  }
   // Random chance to trigger the response
   if (random(1) < probability) {
     console.log("I will become mad if you don't stop!");
