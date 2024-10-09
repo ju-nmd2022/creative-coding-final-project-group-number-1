@@ -54,8 +54,17 @@ function draw() {
   let radius =
     baseRadius + abs(sin(frameCount * pulseSpeed)) * (maxRadius - baseRadius); // Using abs(sin()) to keep radius positive
 
+<<<<<<< Updated upstream
   // Map the radius to a color scale from coldColor to hotColor
   let t = map(radius, baseRadius, maxRadius, 0, 1); // `t` is the interpolation factor between 0 and 1
+=======
+  // Define a threshold for the radius to change color
+  let colorThreshold = maxRadius * 0.99; // Change color only when radius exceeds 80% of maxRadius
+
+  // Map the radius to a color scale only if it exceeds the threshold
+  let t =
+    radius > colorThreshold ? map(radius, colorThreshold, maxRadius, 0, 1) : 0; // `t` is 0 if below threshold
+>>>>>>> Stashed changes
   let orbColor = lerpColor(coldColor, hotColor, t); // Interpolates between blue and red
 
   // Draw the pulsating orb with the interpolated color
