@@ -54,9 +54,6 @@ function draw() {
   let radius =
     baseRadius + abs(sin(frameCount * pulseSpeed)) * (maxRadius - baseRadius); // Using abs(sin()) to keep radius positive
 
-  // Debug statement to see the radius
-  // console.log(`Radius: ${radius}`);
-
   // Define a threshold for the radius to change color
   let colorThreshold = 130; // Threshold for changing color
 
@@ -65,9 +62,6 @@ function draw() {
   if (radius > colorThreshold) {
     t = map(radius, colorThreshold, maxRadius, 0, 1);
   }
-
-  // Debug statement for color transition value
-  // console.log(`t: ${t}`);
 
   let orbColor = lerpColor(coldColor, hotColor, t); // Interpolates between blue and red
 
@@ -192,21 +186,33 @@ function drawPulsatingOrb(xCenter, yCenter, radius, numPoints, orbColor) {
 
 // Function to give the orb personality and react based on size and color
 function giveOrbPersonality(radius, orbColor) {
-  // Define thresholds for large and small orb sizes
-  let largeThreshold = maxRadius * 0.8;
-  let smallThreshold = baseRadius;
+  if (poses.length > 0) {
+    let pose = poses[0].pose;
+    let nose = pose.keypoints[0].position; // Nose (index 0)
+    let leftEye = pose.keypoints[1].position; // Left eye (index 1)
+    let rightEye = pose.keypoints[2].position; // Right eye (index 2)
+    let leftEar = pose.keypoints[3].position; // Left ear (index 3)
+    let rightEar = pose.keypoints[4].position; // Right ear (index 4)
 
-  // Define the probability based on the orb's current size
-  let probability = 0;
+    // Calculate the width and height of the "face" bounding box
+    let faceWidth = dist(leftEar.x, leftEar.y, rightEar.x, rightEar.y);
+    let faceHeight = dist(
+      nose.x,
+      nose.y,
+      (leftEye.x + rightEye.x) / 2,
+      (leftEye.y + rightEye.y) / 2
+    );
 
-  if (radius > largeThreshold) {
-    probability = 0.8; // High probability when orb is large
-  } else if (radius < smallThreshold) {
-    probability = 0.0005; // Low probability when orb is small
-  }
-  // Random chance to trigger the response
-  if (random(1) < probability) {
-    console.log("I will become mad if you don't stop!");
+    let faceArea = faceWidth * faceHeight; // Approximate face area
+
+    // Simulate "proximity" based on face area (larger face area means closer)
+    if (faceArea > 10000) {
+      pulseSpeed = 0.03; // Increase pulse speed when close
+      baseRadius = lerp(baseRadius, 30, 0.1); // Reduce the orb size
+      console.log("You're too close! The orb is panicking!");
+    } else {
+      pulseSpeed = 0.0075; // Normal pulse speed
+    }
   }
 }
 
