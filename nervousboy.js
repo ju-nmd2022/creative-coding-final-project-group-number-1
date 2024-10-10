@@ -184,9 +184,12 @@ function drawPulsatingOrb(xCenter, yCenter, radius, numPoints, orbColor) {
   giveOrbPersonality(radius, orbColor);
 }
 
-// Function to give the orb personality and react based on size and color
+let lastCheckTime = 0; // Variable to store the last time the panic check was performed
+let checkInterval = 2000; // Interval in milliseconds (2000 ms = 2 seconds)
+
 function giveOrbPersonality(radius, orbColor) {
   if (poses.length > 0) {
+    let currentTime = millis(); // Get the current time in milliseconds
     let pose = poses[0].pose;
     let nose = pose.keypoints[0].position; // Nose (index 0)
     let leftEye = pose.keypoints[1].position; // Left eye (index 1)
@@ -205,11 +208,20 @@ function giveOrbPersonality(radius, orbColor) {
 
     let faceArea = faceWidth * faceHeight; // Approximate face area
 
-    // Simulate "proximity" based on face area (larger face area means closer)
-    if (faceArea > 10000) {
-      pulseSpeed = 0.03; // Increase pulse speed when close
-      baseRadius = lerp(baseRadius, 30, 0.1); // Reduce the orb size
-      console.log("You're too close! The orb is panicking!");
+    // Check if enough time has passed since the last panic check
+    if (currentTime - lastCheckTime >= checkInterval) {
+      // Simulate "proximity" based on face area (larger face area means closer)
+      if (faceArea > 10000) {
+        // Adjust this threshold as needed
+        // Random chance to trigger panic mode
+        if (random(1) < 0.8) {
+          // 80% chance to panic
+          pulseSpeed = 0.03; // Increase pulse speed when close
+          baseRadius = lerp(baseRadius, 30, 0.1); // Reduce the orb size
+          console.log("You're too close! The orb is panicking!");
+        }
+      }
+      lastCheckTime = currentTime; // Update the last check time
     } else {
       pulseSpeed = 0.0075; // Normal pulse speed
     }
