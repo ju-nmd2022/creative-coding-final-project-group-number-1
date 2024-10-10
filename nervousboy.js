@@ -12,6 +12,11 @@ let previousKeypoints = []; // To store keypoints from the previous frame
 let movementSpeed = 0; // Average speed of keypoints
 let transitionFactor = 0.02; // Factor to adjust how fast size changes
 
+// Variables for panic mode
+let isPanic = false; // To track panic state
+let panicStartTime = 0; // To record when panic started
+let panicDuration = 1000; // Duration for panic effect (1 second)
+
 function setup() {
   createCanvas(800, 800); // Main canvas for the pulsating orb and video
   background(0);
@@ -23,6 +28,7 @@ function setup() {
   // Define the color gradient: coldColor (blue) and hotColor (red)
   coldColor = color(0, 0, 255); // Blue
   hotColor = color(255, 0, 0); // Red
+  greenColor = color(0, 255, 0); //geen
 
   // Set up video capture and PoseNet
   video = createCapture(VIDEO);
@@ -62,9 +68,13 @@ function draw() {
   if (radius > colorThreshold) {
     t = map(radius, colorThreshold, maxRadius, 0, 1);
   }
-
-  let orbColor = lerpColor(coldColor, hotColor, t); // Interpolates between blue and red
-
+  // Define orb color based on panic state
+  let orbColor;
+  if (isPanic) {
+    orbColor = color(0, 255, 0); // Green color when panicking
+  } else {
+    orbColor = lerpColor(coldColor, hotColor, t); // Interpolates between cold and hot color
+  }
   // Draw the pulsating orb with the interpolated color
   drawPulsatingOrb(width / 2, height / 2, radius, 100, orbColor);
 
@@ -184,12 +194,9 @@ function drawPulsatingOrb(xCenter, yCenter, radius, numPoints, orbColor) {
   giveOrbPersonality(radius, orbColor);
 }
 
-let lastCheckTime = 0; // Variable to store the last time the panic check was performed
-let checkInterval = 2000; // Interval in milliseconds (2000 ms = 2 seconds)
-
+// Function to give the orb personality and react based on size and color
 function giveOrbPersonality(radius, orbColor) {
   if (poses.length > 0) {
-    let currentTime = millis(); // Get the current time in milliseconds
     let pose = poses[0].pose;
     let nose = pose.keypoints[0].position; // Nose (index 0)
     let leftEye = pose.keypoints[1].position; // Left eye (index 1)
@@ -208,71 +215,53 @@ function giveOrbPersonality(radius, orbColor) {
 
     let faceArea = faceWidth * faceHeight; // Approximate face area
 
-    // Check if enough time has passed since the last panic check
-    if (currentTime - lastCheckTime >= checkInterval) {
-      // Simulate "proximity" based on face area (larger face area means closer)
+    // Probability of panic when face area indicates closeness
+    if (faceArea > 10000) {
+      // Calculate probability
+      let probability = 0;
       if (faceArea > 10000) {
-        // Adjust this threshold as needed
-        // Random chance to trigger panic mode
-        if (random(1) < 0.8) {
-          // 80% chance to panic
-          pulseSpeed = 0.03; // Increase pulse speed when close
-          baseRadius = lerp(baseRadius, 30, 0.1); // Reduce the orb size
-          console.log("You're too close! The orb is panicking!");
-        }
+        // Face is close
+        probability = 0.005; // 0.5% probability to panic but is pretty high due to millis counting system.
+      } else {
+        probability = 0.0005; // Low probability when not close
       }
-      lastCheckTime = currentTime; // Update the last check time
+
+      // Random chance to trigger the panic response
+      if (random(1) < probability) {
+        if (!isPanic) {
+          // Check if not already in panic
+          isPanic = true; // Set panic mode
+          panicStartTime = millis(); // Record the start time of panic
+        }
+        pulseSpeed = 0.03; // Increase pulse speed when close
+        baseRadius = lerp(baseRadius, 30, 0.1); // Reduce the orb size
+        console.log("You're too close! The orb is panicking!");
+      }
     } else {
       pulseSpeed = 0.0075; // Normal pulse speed
     }
   }
-}
 
-// Function to draw the PoseNet video and detected keypoints
-function drawPoseNetVideo() {
-  // Draw the video in the top-right corner
-  image(video, width - 320, 0, 320, 240);
-
-  // Draw the keypoints and skeleton on top of the video
-  drawKeypoints(width - 320, 0);
-  drawSkeleton(width - 320, 0);
-}
-
-// Function to draw ellipses over the detected keypoints
-function drawKeypoints(xOffset, yOffset) {
-  for (let i = 0; i < poses.length; i++) {
-    let pose = poses[i].pose;
-    for (let j = 0; j < pose.keypoints.length; j++) {
-      let keypoint = pose.keypoints[j];
-      if (keypoint.score > 0.1) {
-        fill(255, 0, 0); // Red keypoints
-        noStroke();
-        ellipse(
-          keypoint.position.x + xOffset,
-          keypoint.position.y + yOffset,
-          4,
-          4
-        );
-      }
-    }
+  // Check if panic duration has elapsed
+  if (isPanic && millis() - panicStartTime > panicDuration) {
+    isPanic = false; // Reset panic mode
+    console.log("The orb has calmed down.");
   }
 }
 
-// Function to draw skeletons
-function drawSkeleton(xOffset, yOffset) {
+// Function to draw PoseNet video feed and keypoints
+function drawPoseNetVideo() {
+  image(video, width - 320, 0); // Draw video in top-right corner
+  stroke(255);
+  strokeWeight(2);
   for (let i = 0; i < poses.length; i++) {
-    let skeleton = poses[i].skeleton;
-    for (let j = 0; j < skeleton.length; j++) {
-      let partA = skeleton[j][0];
-      let partB = skeleton[j][1];
-      stroke(255, 0, 0); // Red skeleton lines
-      strokeWeight(2);
-      line(
-        partA.position.x + xOffset,
-        partA.position.y + yOffset,
-        partB.position.x + xOffset,
-        partB.position.y + yOffset
-      );
+    let keypoints = poses[i].pose.keypoints;
+    for (let j = 0; j < keypoints.length; j++) {
+      let keypoint = keypoints[j];
+      if (keypoint.score > 0.2) {
+        fill(255, 0, 0); // Green for detected keypoints
+        ellipse(keypoint.position.x + width - 320, keypoint.position.y, 10, 10); // Draw keypoints
+      }
     }
   }
 }
