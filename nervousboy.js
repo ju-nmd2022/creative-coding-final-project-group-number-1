@@ -12,6 +12,15 @@ let previousKeypoints = []; // To store keypoints from the previous frame
 let movementSpeed = 0; // Average speed of keypoints
 let transitionFactor = 0.02; // Factor to adjust how fast size changes
 
+// Reactionstate
+let reactionStateNeutural = false;
+let reactionStateBored = false;
+let reactionStateScared = true;
+
+console.log(reactionStateNeutural);
+console.log(reactionStateBored);
+console.log(reactionStateScared);
+
 // Variables for panic mode
 let isPanic = false; // To track panic state
 let panicStartTime = 0; // To record when panic started
@@ -172,25 +181,46 @@ function updateTransitionSpeedWithMovement() {
   previousKeypoints = poses;
 }
 
-// Function to draw the pulsating orb
+// Function to draw the orb without movement when bored
 function drawPulsatingOrb(xCenter, yCenter, radius, numPoints, orbColor) {
   let angleStep = TWO_PI / numPoints;
+
   for (let i = 0; i < numPoints; i++) {
     let angle = i * angleStep;
 
-    // Adding noise to adjust the radius for each point
-    let noiseFactor = noise(i * 0.1, frameCount * 0.01);
-    let adjustedRadius = radius + map(noiseFactor, 0, 1, -10, 10); // Randomly adjust radius with noise
+    if (reactionStateNeutural == true) {
+      // Neutural state: Pulsating behavior with noise
+      let noiseFactor = noise(i * 0.1, frameCount * 0.01);
+      let adjustedRadius = radius + map(noiseFactor, 0, 1, -10, 10); // Adjust radius with noise
 
-    let x = xCenter + cos(angle) * adjustedRadius;
-    let y = yCenter + sin(angle) * adjustedRadius;
+      let x = xCenter + cos(angle) * adjustedRadius;
+      let y = yCenter + sin(angle) * adjustedRadius;
 
-    fill(orbColor);
-    noStroke();
-    ellipse(x, y, 5, 5);
+      fill(orbColor);
+      noStroke();
+      ellipse(x, y, 5, 5);
+    } else if (reactionStateBored == true) {
+      // Bored state: Fixed radius, no pulsation or movement
+      let adjustedRadius = radius; // Keep the radius fixed
+
+      let x = xCenter + cos(angle) * adjustedRadius;
+      let y = yCenter + sin(angle) * adjustedRadius;
+
+      fill(155, 155, 155);
+      noStroke();
+      ellipse(x, y, 5, 5);
+    } else if (reactionStateScared == true) {
+      let noiseFactor = noise(i * 10, frameCount * 0.01);
+      let adjustedRadius = radius + map(noiseFactor, 0, 1, -10, 10); // Adjust radius with noise
+
+      let x = xCenter + cos(angle) * adjustedRadius;
+      let y = yCenter + sin(angle) * adjustedRadius;
+
+      fill(orbColor);
+      noStroke();
+      ellipse(x, y, 5, 5);
+    }
   }
-
-  // Introduce personality and probability
   giveOrbPersonality(radius, orbColor);
 }
 
@@ -216,10 +246,10 @@ function giveOrbPersonality(radius, orbColor) {
     let faceArea = faceWidth * faceHeight; // Approximate face area
 
     // Probability of panic when face area indicates closeness
-    if (faceArea > 10000) {
+    if (reactionStateScared === true && faceArea > 10000) {
       // Calculate probability
       let probability = 0;
-      if (faceArea > 10000) {
+      if (reactionStateScared === true && faceArea > 10000) {
         // Face is close
         probability = 0.005; // 0.5% probability to panic but is pretty high due to millis counting system.
       } else {
