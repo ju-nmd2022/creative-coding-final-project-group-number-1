@@ -13,18 +13,21 @@ let movementSpeed = 0; // Average speed of keypoints
 let transitionFactor = 0.02; // Factor to adjust how fast size changes
 
 // Reactionstate
-let reactionStateNeutural = false;
-let reactionStateBored = false;
-let reactionStateScared = true;
+let neutural = false;
+let bored = true;
+let scared = false;
 
-console.log(reactionStateNeutural);
-console.log(reactionStateBored);
-console.log(reactionStateScared);
+console.log("neutural " + neutural);
+console.log("bored " + bored);
+console.log("scared " + scared);
 
 // Variables for panic mode
 let isPanic = false; // To track panic state
 let panicStartTime = 0; // To record when panic started
 let panicDuration = 1000; // Duration for panic effect (1 second)
+
+//variables for boredClose mode
+let isBoredClose = false;
 
 function setup() {
   createCanvas(800, 800); // Main canvas for the pulsating orb and video
@@ -188,7 +191,7 @@ function drawPulsatingOrb(xCenter, yCenter, radius, numPoints, orbColor) {
   for (let i = 0; i < numPoints; i++) {
     let angle = i * angleStep;
 
-    if (reactionStateNeutural == true) {
+    if (neutural == true) {
       // Neutural state: Pulsating behavior with noise
       let noiseFactor = noise(i * 0.1, frameCount * 0.01);
       let adjustedRadius = radius + map(noiseFactor, 0, 1, -10, 10); // Adjust radius with noise
@@ -199,7 +202,7 @@ function drawPulsatingOrb(xCenter, yCenter, radius, numPoints, orbColor) {
       fill(orbColor);
       noStroke();
       ellipse(x, y, 5, 5);
-    } else if (reactionStateBored == true) {
+    } else if (bored == true) {
       // Bored state: Fixed radius, no pulsation or movement
       let adjustedRadius = radius; // Keep the radius fixed
 
@@ -209,7 +212,7 @@ function drawPulsatingOrb(xCenter, yCenter, radius, numPoints, orbColor) {
       fill(155, 155, 155);
       noStroke();
       ellipse(x, y, 5, 5);
-    } else if (reactionStateScared == true) {
+    } else if (scared == true) {
       let noiseFactor = noise(i * 10, frameCount * 0.01);
       let adjustedRadius = radius + map(noiseFactor, 0, 1, -10, 10); // Adjust radius with noise
 
@@ -245,27 +248,36 @@ function giveOrbPersonality(radius, orbColor) {
 
     let faceArea = faceWidth * faceHeight; // Approximate face area
 
-    // Probability of panic when face area indicates closeness
-    if (reactionStateScared === true && faceArea > 10000) {
-      // Calculate probability
-      let probability = 0;
-      if (reactionStateScared === true && faceArea > 10000) {
-        // Face is close
-        probability = 0.005; // 0.5% probability to panic but is pretty high due to millis counting system.
-      } else {
-        probability = 0.0005; // Low probability when not close
-      }
+    // Handle scared reaction with probability
+    if (scared === true && faceArea > 10000) {
+      let probability = 0.005; // 0.5% chance to panic when scared
 
-      // Random chance to trigger the panic response
       if (random(1) < probability) {
         if (!isPanic) {
-          // Check if not already in panic
-          isPanic = true; // Set panic mode
-          panicStartTime = millis(); // Record the start time of panic
+          // Trigger panic mode
+          isPanic = true;
+          panicStartTime = millis(); // Start the panic timer
         }
-        pulseSpeed = 0.03; // Increase pulse speed when close
+        pulseSpeed = 0.03; // Increase pulse speed
         baseRadius = lerp(baseRadius, 30, 0.1); // Reduce the orb size
         console.log("You're too close! The orb is panicking!");
+      }
+    }
+    // Handle bored reaction with probability
+    else if (bored === true && faceArea > 10000) {
+      let probability = 0.002; // Set a smaller probability for bored reaction
+
+      if (random(1) < probability) {
+        console.log("The orb is bored and you are too close.");
+
+        // Reduce the pulse speed to make it slower
+        pulseSpeed = 0.002; // Slow down the pulse
+
+        // Increase the base radius to make the orb appear bigger
+        baseRadius = lerp(baseRadius, 150, 0.1); // Increase orb size smoothly
+
+        // Change orb color to white
+        orbColor = color(255); // White color to indicate boredom
       }
     } else {
       pulseSpeed = 0.0075; // Normal pulse speed
