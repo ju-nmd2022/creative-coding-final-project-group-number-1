@@ -24,10 +24,12 @@ console.log("scared " + scared);
 // Variables for panic mode
 let isPanic = false; // To track panic state
 let panicStartTime = 0; // To record when panic started
-let panicDuration = 1000; // Duration for panic effect (1 second)
+let panicDuration = 5000; // Duration for panic effect (5 second)
 
 //variables for boredClose mode
-let isBoredClose = false;
+let isBoredClose = false; // Variables for boredClose mode
+let boredStartTime = 0; // To record when boredClose started
+let boredDuration = 5000; // Duration for boredClose effect (5 second)
 
 function setup() {
   createCanvas(800, 800); // Main canvas for the pulsating orb and video
@@ -84,6 +86,8 @@ function draw() {
   let orbColor;
   if (isPanic) {
     orbColor = color(0, 255, 0); // Green color when panicking
+  } else if (isBoredClose) {
+    orbColor = color(155, 155, 155);
   } else {
     orbColor = lerpColor(coldColor, hotColor, t); // Interpolates between cold and hot color
   }
@@ -209,7 +213,7 @@ function drawPulsatingOrb(xCenter, yCenter, radius, numPoints, orbColor) {
       let x = xCenter + cos(angle) * adjustedRadius;
       let y = yCenter + sin(angle) * adjustedRadius;
 
-      fill(155, 155, 155);
+      fill(orbColor);
       noStroke();
       ellipse(x, y, 5, 5);
     } else if (scared == true) {
@@ -263,21 +267,20 @@ function giveOrbPersonality(radius, orbColor) {
         console.log("You're too close! The orb is panicking!");
       }
     }
-    // Handle bored reaction with probability
+    // Handle boredClose reaction with probability
     else if (bored === true && faceArea > 10000) {
-      let probability = 0.002; // Set a smaller probability for bored reaction
+      let probability = 0.002; // Set a smaller probability for boredClose reaction
 
       if (random(1) < probability) {
+        if (!isBoredClose) {
+          // Trigger boredClose mode
+          isBoredClose = true;
+          boredStartTime = millis(); // Start the bored timer
+        }
+
         console.log("The orb is bored and you are too close.");
-
-        // Reduce the pulse speed to make it slower
-        pulseSpeed = 0.002; // Slow down the pulse
-
-        // Increase the base radius to make the orb appear bigger
-        baseRadius = lerp(baseRadius, 150, 0.1); // Increase orb size smoothly
-
-        // Change orb color to white
-        orbColor = color(255); // White color to indicate boredom
+        pulseSpeed = 0; // Slow down the pulse
+        baseRadius = lerp(baseRadius, 150, 0); // Increase orb size smoothly
       }
     } else {
       pulseSpeed = 0.0075; // Normal pulse speed
@@ -289,8 +292,13 @@ function giveOrbPersonality(radius, orbColor) {
     isPanic = false; // Reset panic mode
     console.log("The orb has calmed down.");
   }
-}
 
+  // Check if boredClose duration has elapsed
+  if (isBoredClose && millis() - boredStartTime > boredDuration) {
+    isBoredClose = false; // Reset boredClose mode
+    console.log("The orb is no longer bored.");
+  }
+}
 // Function to draw PoseNet video feed and keypoints
 function drawPoseNetVideo() {
   image(video, width - 320, 0); // Draw video in top-right corner
