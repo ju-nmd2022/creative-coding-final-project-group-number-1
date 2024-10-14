@@ -12,6 +12,24 @@ let previousKeypoints = []; // To store keypoints from the previous frame
 let movementSpeed = 0; // Average speed of keypoints
 let transitionFactor = 0.02; // Factor to adjust how fast size changes
 
+// Variables for probability-driven reaction states
+let currentState = "neutral"; // Default starting state
+
+// Variables for panic mode
+let isPanic = false; // To track panic state
+let panicStartTime = 0; // To record when panic started
+let panicDuration = 5000; // Duration for panic effect (5 seconds)
+
+// Variables for boredClose mode
+let isBoredClose = false; // To track boredClose state
+let boredStartTime = 0; // To record when boredClose started
+let boredDuration = 5000; // Duration for boredClose effect (5 seconds)
+
+// Variables for happyClose mode
+let isHappyClose = false; // To track happyClose state
+let happyStartTime = 0; // To record when happyClose started
+let happyDuration = 5000; // Duration for happyClose effect (10 seconds)
+
 function setup() {
   createCanvas(800, 800); // Main canvas for the pulsating orb and video
   background(0);
@@ -23,6 +41,7 @@ function setup() {
   // Define the color gradient: coldColor (blue) and hotColor (red)
   coldColor = color(0, 0, 255); // Blue
   hotColor = color(255, 0, 0); // Red
+  greenColor = color(0, 255, 0); // Green
 
   // Set up video capture and PoseNet
   video = createCapture(VIDEO);
@@ -47,6 +66,9 @@ function modelReady() {
 function draw() {
   background(0, 20); // Fading background for orb trail effect
 
+  // Randomly decide which state the orb will be in based on probability
+  chooseState();
+
   // Update the baseRadius and maxRadius based on keypoints and their speed
   updateOrbSize();
 
@@ -54,9 +76,26 @@ function draw() {
   let radius =
     baseRadius + abs(sin(frameCount * pulseSpeed)) * (maxRadius - baseRadius); // Using abs(sin()) to keep radius positive
 
-  // Map the radius to a color scale from coldColor to hotColor
-  let t = map(radius, baseRadius, maxRadius, 0, 1); // `t` is the interpolation factor between 0 and 1
-  let orbColor = lerpColor(coldColor, hotColor, t); // Interpolates between blue and red
+  // Define a threshold for the radius to change color
+  let colorThreshold = 130; // Threshold for changing color
+
+  // Map the radius to a color scale only if it exceeds the threshold
+  let t = 0; // Initialize t
+  if (radius > colorThreshold) {
+    t = map(radius, colorThreshold, maxRadius, 0, 1);
+  }
+
+  // Define orb color based on the current state
+  let orbColor;
+  if (isPanic) {
+    orbColor = color(0, 255, 0); // Green color when panicking
+  } else if (isBoredClose) {
+    orbColor = color(155, 155, 155); // Gray when bored
+  } else if (isHappyClose) {
+    orbColor = color(255, 223, 0); // Yellow when happy
+  } else {
+    orbColor = lerpColor(coldColor, hotColor, t); // Interpolates between cold and hot color
+  }
 
   // Draw the pulsating orb with the interpolated color
   drawPulsatingOrb(width / 2, height / 2, radius, 100, orbColor);
@@ -64,8 +103,6 @@ function draw() {
   // Display the PoseNet video and keypoints in the top-right corner
   drawPoseNetVideo();
 }
-
-// Function to update the baseRadius and maxRadius based on the area covered by the keypoints and movement speed
 function updateOrbSize() {
   if (poses.length > 0) {
     let minX = Infinity,
@@ -110,12 +147,71 @@ function updateOrbSize() {
       transitionFactor
     );
 
-    // Optional: Clamp the radius to avoid excessive sizes
-    // baseRadius = constrain(baseRadius, 10, 650); // Set minimum and maximum limits
-    // maxRadius = constrain(maxRadius, 20, 700); // Set minimum and maximum limits
+    // Clamp maxRadius to ensure it's large enough
+    maxRadius = constrain(maxRadius, 100, 600); // Example range
 
-    // Adjust the transition factor based on speed
+    // Optional: Adjust the transition factor based on speed
     updateTransitionSpeedWithMovement();
+  }
+}
+// Choose the state of the orb randomly with different probabilities
+function chooseState() {
+  let randomValue = random(); // Generates a random number between 0 and 1
+  let happyProbability = 0.4; // 40% chance for happy
+  let boredProbability = 0.3; // 30% chance for bored
+  let scaredProbability = 0.2; // 20% chance for scared
+
+  if (randomValue < happyProbability) {
+    currentState = "happy";
+    if (!isHappyClose) {
+      isHappyClose = true;
+      happyStartTime = millis(); // Start the Happy timer
+      console.log("The orb is Happy!");
+    }
+  } else if (randomValue < happyProbability + boredProbability) {
+    currentState = "bored";
+    if (!isBoredClose) {
+      isBoredClose = true;
+      boredStartTime = millis(); // Start the bored timer
+      console.log("The orb is Bored!");
+    }
+  } else if (
+    randomValue <
+    happyProbability + boredProbability + scaredProbability
+  ) {
+    currentState = "scared";
+    if (!isPanic) {
+      isPanic = true;
+      panicStartTime = millis(); // Start the panic timer
+      console.log("The orb is Scared!");
+    }
+  } else {
+    currentState = "neutral";
+    console.log("The orb is Neutral.");
+  }
+
+  // Reset states after durations
+  resetStates();
+}
+
+// Reset the states after their respective durations
+function resetStates() {
+  // Check if panic duration has elapsed
+  if (isPanic && millis() - panicStartTime > panicDuration) {
+    isPanic = false; // Reset panic mode
+    console.log("The orb has calmed down from panic.");
+  }
+
+  // Check if boredClose duration has elapsed
+  if (isBoredClose && millis() - boredStartTime > boredDuration) {
+    isBoredClose = false; // Reset boredClose mode
+    console.log("The orb is no longer bored.");
+  }
+
+  // Check if HappyClose duration has elapsed
+  if (isHappyClose && millis() - happyStartTime > happyDuration) {
+    isHappyClose = false; // Reset HappyClose mode
+    console.log("The orb is no longer Happy.");
   }
 }
 
@@ -160,67 +256,37 @@ function updateTransitionSpeedWithMovement() {
 // Function to draw the pulsating orb
 function drawPulsatingOrb(xCenter, yCenter, radius, numPoints, orbColor) {
   let angleStep = TWO_PI / numPoints;
+
   for (let i = 0; i < numPoints; i++) {
     let angle = i * angleStep;
 
-    // Adding noise to adjust the radius for each point
+    // Calculate the coordinates for each point of the pulsating orb
     let noiseFactor = noise(i * 0.1, frameCount * 0.01);
-    let adjustedRadius = radius + map(noiseFactor, 0, 1, -10, 10); // Randomly adjust radius with noise
+    let adjustedRadius = radius + map(noiseFactor, 0, 1, -10, 10); // Adjust radius with noise for pulsation
 
     let x = xCenter + cos(angle) * adjustedRadius;
     let y = yCenter + sin(angle) * adjustedRadius;
 
+    // Set the color and draw the orb
     fill(orbColor);
     noStroke();
-    ellipse(x, y, 5, 5);
+    ellipse(x, y, 5, 5); // Draw small circles to form the orb
   }
 }
 
-// Function to draw the PoseNet video and detected keypoints
+// Function to draw PoseNet video feed and keypoints
 function drawPoseNetVideo() {
-  // Draw the video in the top-right corner
-  image(video, width - 320, 0, 320, 240);
-
-  // Draw the keypoints and skeleton on top of the video
-  drawKeypoints(width - 320, 0);
-  drawSkeleton(width - 320, 0);
-}
-
-// Function to draw ellipses over the detected keypoints
-function drawKeypoints(xOffset, yOffset) {
+  image(video, width - 320, 0); // Draw video in top-right corner
+  stroke(255);
+  strokeWeight(2);
   for (let i = 0; i < poses.length; i++) {
-    let pose = poses[i].pose;
-    for (let j = 0; j < pose.keypoints.length; j++) {
-      let keypoint = pose.keypoints[j];
-      if (keypoint.score > 0.1) {
-        fill(255, 0, 0); // Red keypoints
-        noStroke();
-        ellipse(
-          keypoint.position.x + xOffset,
-          keypoint.position.y + yOffset,
-          4,
-          4
-        );
+    let keypoints = poses[i].pose.keypoints;
+    for (let j = 0; j < keypoints.length; j++) {
+      let keypoint = keypoints[j];
+      if (keypoint.score > 0.2) {
+        fill(255, 0, 0); // Red for detected keypoints
+        ellipse(keypoint.position.x + width - 320, keypoint.position.y, 10, 10); // Draw keypoints
       }
-    }
-  }
-}
-
-// Function to draw skeletons
-function drawSkeleton(xOffset, yOffset) {
-  for (let i = 0; i < poses.length; i++) {
-    let skeleton = poses[i].skeleton;
-    for (let j = 0; j < skeleton.length; j++) {
-      let partA = skeleton[j][0];
-      let partB = skeleton[j][1];
-      stroke(255, 0, 0); // Red skeleton lines
-      strokeWeight(2);
-      line(
-        partA.position.x + xOffset,
-        partA.position.y + yOffset,
-        partB.position.x + xOffset,
-        partB.position.y + yOffset
-      );
     }
   }
 }

@@ -13,11 +13,11 @@ let movementSpeed = 0; // Average speed of keypoints
 let transitionFactor = 0.02; // Factor to adjust how fast size changes
 
 // Reactionstate
-let neutural = false;
-let bored = true;
+let happy = true;
+let bored = false;
 let scared = false;
 
-console.log("neutural " + neutural);
+console.log("happy " + happy);
 console.log("bored " + bored);
 console.log("scared " + scared);
 
@@ -30,6 +30,11 @@ let panicDuration = 5000; // Duration for panic effect (5 second)
 let isBoredClose = false; // Variables for boredClose mode
 let boredStartTime = 0; // To record when boredClose started
 let boredDuration = 5000; // Duration for boredClose effect (5 second)
+
+// Variables for happyClose mode
+let isHappyClose = false; // To track happyClose state
+let happyStartTime = 0; // To record when happyClose started
+let happyDuration = 5000; // Duration for happyClose effect (5 seconds)
 
 function setup() {
   createCanvas(800, 800); // Main canvas for the pulsating orb and video
@@ -88,6 +93,8 @@ function draw() {
     orbColor = color(0, 255, 0); // Green color when panicking
   } else if (isBoredClose) {
     orbColor = color(155, 155, 155);
+  } else if (isHappyClose) {
+    orbColor = color(255, 223, 0);
   } else {
     orbColor = lerpColor(coldColor, hotColor, t); // Interpolates between cold and hot color
   }
@@ -195,8 +202,8 @@ function drawPulsatingOrb(xCenter, yCenter, radius, numPoints, orbColor) {
   for (let i = 0; i < numPoints; i++) {
     let angle = i * angleStep;
 
-    if (neutural == true) {
-      // Neutural state: Pulsating behavior with noise
+    if (happy == true) {
+      // Happy state: Pulsating behavior with noise
       let noiseFactor = noise(i * 0.1, frameCount * 0.01);
       let adjustedRadius = radius + map(noiseFactor, 0, 1, -10, 10); // Adjust radius with noise
 
@@ -279,8 +286,24 @@ function giveOrbPersonality(radius, orbColor) {
         }
 
         console.log("The orb is bored and you are too close.");
-        pulseSpeed = 0; // Slow down the pulse
-        baseRadius = lerp(baseRadius, 150, 0); // Increase orb size smoothly
+        pulseSpeed = 0.002; // Slow down the pulse
+        baseRadius = lerp(baseRadius, 150, 0.1); // Increase orb size smoothly
+      }
+    }
+    // Handle happyClose reaction with probability
+    else if (happy === true && faceArea > 10000) {
+      let probability = 0.003; // Set a smaller probability for happyClose reaction
+
+      if (random(1) < probability) {
+        if (!isHappyClose) {
+          // Trigger happyClose mode
+          isHappyClose = true;
+          happyStartTime = millis(); // Start the Happy timer
+        }
+
+        console.log("The orb is Happy and you are too close.");
+        pulseSpeed = 3.005; // Happy pulse speed
+        baseRadius = lerp(baseRadius, 100, 0.1); // Keep a moderate orb size
       }
     } else {
       pulseSpeed = 0.0075; // Normal pulse speed
@@ -290,7 +313,7 @@ function giveOrbPersonality(radius, orbColor) {
   // Check if panic duration has elapsed
   if (isPanic && millis() - panicStartTime > panicDuration) {
     isPanic = false; // Reset panic mode
-    console.log("The orb has calmed down.");
+    console.log("The orb has calmed down from panic.");
   }
 
   // Check if boredClose duration has elapsed
@@ -298,7 +321,14 @@ function giveOrbPersonality(radius, orbColor) {
     isBoredClose = false; // Reset boredClose mode
     console.log("The orb is no longer bored.");
   }
+
+  // Check if HappyClose duration has elapsed
+  if (isHappyClose && millis() - happyStartTime > happyDuration) {
+    isHappyClose = false; // Reset HappyClose mode
+    console.log("The orb is no longer Happy.");
+  }
 }
+
 // Function to draw PoseNet video feed and keypoints
 function drawPoseNetVideo() {
   image(video, width - 320, 0); // Draw video in top-right corner
