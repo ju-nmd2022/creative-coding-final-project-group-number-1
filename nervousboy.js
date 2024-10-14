@@ -63,6 +63,8 @@ function setup() {
   } else {
     console.error("ml5 or poseNet is not loaded properly");
   }
+
+  switchReactionState();
 }
 
 function modelReady() {
@@ -103,6 +105,40 @@ function draw() {
 
   // Display the PoseNet video and keypoints in the top-right corner
   drawPoseNetVideo();
+}
+
+// Function to switch reaction states automatically with random delay
+function switchReactionState() {
+  let randomDelay = random(8000, 15000); // Random delay between 8 and 15 seconds
+
+  setTimeout(() => {
+    let randomValue = random(1); // Get a random number between 0 and 1
+
+    // Reset all reaction states
+    happy = false;
+    bored = false;
+    scared = false;
+
+    if (randomValue < 0.33) {
+      // 33% chance for happy
+      happy = true;
+      console.log("The orb is now happy.");
+    } else if (randomValue < 0.66) {
+      // 33% chance for bored
+      bored = true;
+      console.log("The orb is now bored.");
+    } else if (randomValue < 0.99) {
+      // 33% chance for scared
+      scared = true;
+      console.log("The orb is now scared.");
+    } else {
+      // 1% chance for neutral state (no reaction)
+      console.log("The orb is in a neutral state.");
+    }
+
+    // Call switchReactionState again with a new random delay
+    switchReactionState();
+  }, randomDelay); // Set the timeout with the random delay
 }
 
 function updateOrbSize() {
