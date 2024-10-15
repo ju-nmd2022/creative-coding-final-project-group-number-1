@@ -65,6 +65,7 @@ function setup() {
   }
 
   switchReactionState();
+  switchCloseReactionState();
 }
 
 function modelReady() {
@@ -92,7 +93,7 @@ function draw() {
   // Define orb color based on panic state
   let orbColor;
   if (isPanic) {
-    orbColor = color(0, 255, 0); // Green color when panicking
+    orbColor = color(255, 0, 0); // red color when panicking
   } else if (isBoredClose) {
     orbColor = color(155, 155, 155);
   } else if (isHappyClose) {
@@ -100,11 +101,46 @@ function draw() {
   } else {
     orbColor = lerpColor(coldColor, hotColor, t); // Interpolates between cold and hot color
   }
+
   // Draw the pulsating orb with the interpolated color
   drawPulsatingOrb(width / 2, height / 2, radius, 100, orbColor);
 
   // Display the PoseNet video and keypoints in the top-right corner
   drawPoseNetVideo();
+}
+
+// Function to randomly trigger isPanic, isBoredClose, or isHappyClose
+function switchCloseReactionState() {
+  let randomDelay = random(1000, 3000); // Random delay between 1 and 3 seconds
+
+  setTimeout(() => {
+    let randomValue = random(1); // Get a random number between 0 and 1
+
+    // Reset all close states
+    isPanic = false;
+    isBoredClose = false;
+    isHappyClose = false;
+
+    if (randomValue < 0.005) {
+      // 0.5% chance for panic
+      isPanic = true;
+      panicStartTime = millis(); // Start the panic timer
+      console.log("Randomly triggered panic mode.");
+    } else if (randomValue < 0.01) {
+      // 0.5% chance for boredClose
+      isBoredClose = true;
+      boredStartTime = millis(); // Start the bored timer
+      console.log("Randomly triggered boredClose mode.");
+    } else if (randomValue < 0.015) {
+      // 0.5% chance for happyClose
+      isHappyClose = true;
+      happyStartTime = millis(); // Start the happy timer
+      console.log("Randomly triggered happyClose mode.");
+    }
+
+    // Call switchCloseReactionState again with a new random delay
+    switchCloseReactionState();
+  }, randomDelay); // Set the timeout with the random delay
 }
 
 // Function to switch reaction states automatically with random delay
