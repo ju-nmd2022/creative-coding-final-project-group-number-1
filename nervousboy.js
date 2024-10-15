@@ -367,15 +367,15 @@ function giveOrbPersonality(radius, orbColor) {
 
 // Function to draw PoseNet video feed and keypoints
 function drawPoseNetVideo() {
-  image(video, width - 320, 0); // Draw video in top-right corner
+  image(video, width - 320, 0); // Draw video in top-right corner comment out when live
   stroke(255);
-  strokeWeight(2);
+  strokeWeight(1); // change stroke to 0 when live
   for (let i = 0; i < poses.length; i++) {
     let keypoints = poses[i].pose.keypoints;
     for (let j = 0; j < keypoints.length; j++) {
       let keypoint = keypoints[j];
       if (keypoint.score > 0.2) {
-        fill(255, 0, 0); // Green for detected keypoints
+        fill(0, 200, 0); // Green for detected keypoints. change to black when live
         ellipse(keypoint.position.x + width - 320, keypoint.position.y, 10, 10); // Draw keypoints
       }
     }
