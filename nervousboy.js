@@ -8,8 +8,8 @@ let pulseSpeed = 0.0075; // Initial pulse speed factor
 
 let coldColor, hotColor; // Define the cold and hot colors
 
-let previousKeypoints = []; // To store keypoints from the previous frame
-let movementSpeed = 0; // Average speed of keypoints
+let previousKeypoints = []; 
+let movementSpeed = 0; 
 let transitionFactor = 0.02; // Factor to adjust how fast size changes
 
 // Reactionstate
@@ -22,19 +22,19 @@ console.log("bored " + bored);
 console.log("scared " + scared);
 
 // Variables for panic mode
-let isPanic = false; // To track panic state
-let panicStartTime = 0; // To record when panic started
+let isPanic = false; 
+let panicStartTime = 0; 
 let panicDuration = 5000; // Duration for panic effect (5 second)
 
 //variables for boredClose mode
-let isBoredClose = false; // Variables for boredClose mode
-let boredStartTime = 0; // To record when boredClose started
+let isBoredClose = false; 
+let boredStartTime = 0;
 let boredDuration = 5000; // Duration for boredClose effect (5 second)
 
 // Variables for happyClose mode
-let isHappyClose = false; // To track happyClose state
-let happyStartTime = 0; // To record when happyClose started
-let happyDuration = 5000; // Duration for happyClose effect (5 seconds)
+let isHappyClose = false; 
+let happyStartTime = 0; 
+let happyDuration = 5000; 
 
 function setup() {
   createCanvas(800, 800); // Main canvas for the pulsating orb and video
@@ -73,20 +73,17 @@ function modelReady() {
 }
 
 function draw() {
-  background(0, 20); // Fading background for orb trail effect
+  background(0, 20); 
 
-  // Update the baseRadius and maxRadius based on keypoints and their speed
   updateOrbSize();
 
-  // Pulsating orb animation on the main canvas
+
   let radius =
-    baseRadius + abs(sin(frameCount * pulseSpeed)) * (maxRadius - baseRadius); // Using abs(sin()) to keep radius positive
+    baseRadius + abs(sin(frameCount * pulseSpeed)) * (maxRadius - baseRadius); 
 
-  // Define a threshold for the radius to change color
-  let colorThreshold = 130; // Threshold for changing color
 
-  // Map the radius to a color scale only if it exceeds the threshold
-  let t = 0; // Initialize t
+  let colorThreshold = 130; 
+  let t = 0; 
   if (radius > colorThreshold) {
     t = map(radius, colorThreshold, maxRadius, 0, 1);
   }
@@ -99,13 +96,13 @@ function draw() {
   } else if (isHappyClose) {
     orbColor = color(255, 223, 0);
   } else {
-    orbColor = lerpColor(coldColor, hotColor, t); // Interpolates between cold and hot color
+    orbColor = lerpColor(coldColor, hotColor, t); 
   }
 
-  // Draw the pulsating orb with the interpolated color
+
   drawPulsatingOrb(width / 2, height / 2, radius, 100, orbColor);
 
-  // Display the PoseNet video and keypoints in the top-right corner
+
   drawPoseNetVideo();
 }
 
@@ -144,13 +141,14 @@ function switchCloseReactionState() {
 }
 
 // Function to switch reaction states automatically with random delay
+// got help from chat here 
 function switchReactionState() {
   let randomDelay = random(8000, 15000); // Random delay between 8 and 15 seconds
 
   setTimeout(() => {
     let randomValue = random(1); // Get a random number between 0 and 1
 
-    // Reset all reaction states
+    // all the states true or false
     happy = false;
     bored = false;
     scared = false;
@@ -199,17 +197,15 @@ function updateOrbSize() {
       }
     }
 
-    // Calculate the width and height of the bounding box
+
     let width = maxX - minX;
     let height = maxY - minY;
 
-    // Calculate the area of the bounding box
     let area = width * height;
 
-    // Exaggeration factor for baseRadius and maxRadius
     let exaggerationFactor = 4;
 
-    // Map the area to the baseRadius and maxRadius with exaggeration
+
     baseRadius = lerp(
       baseRadius,
       map(area, 0, 640 * 480, 10, 100) * exaggerationFactor,
@@ -221,15 +217,15 @@ function updateOrbSize() {
       transitionFactor
     );
 
-    // Clamp maxRadius to ensure it's large enough
-    maxRadius = constrain(maxRadius, 100, 600); // Example range
 
-    // Optional: Adjust the transition factor based on speed
+    maxRadius = constrain(maxRadius, 100, 600); 
+
+
     updateTransitionSpeedWithMovement();
   }
 }
 
-// Function to adjust the transition factor based on keypoint movement speed
+// got help from chat here 
 function updateTransitionSpeedWithMovement() {
   if (poses.length > 0 && previousKeypoints.length > 0) {
     let totalSpeed = 0;
@@ -243,10 +239,10 @@ function updateTransitionSpeedWithMovement() {
         let previousKeypoint = previousKeypoints[i]?.pose?.keypoints[j];
 
         if (keypoint && previousKeypoint && keypoint.score > 0.1) {
-          // Calculate distance moved
+          
           let dx = keypoint.position.x - previousKeypoint.position.x;
           let dy = keypoint.position.y - previousKeypoint.position.y;
-          let distance = sqrt(dx * dx + dy * dy); // Euclidean distance
+          let distance = sqrt(dx * dx + dy * dy); 
 
           totalSpeed += distance;
           count++;
@@ -254,16 +250,14 @@ function updateTransitionSpeedWithMovement() {
       }
     }
 
-    // Calculate the average speed
     if (count > 0) {
       movementSpeed = totalSpeed / count;
     }
 
-    // Map movement speed to the transition factor (how fast the size changes)
-    transitionFactor = map(movementSpeed, 0, 100, 0.01, 0.3); // Increased max value for more sensitivity
+    
+    transitionFactor = map(movementSpeed, 0, 100, 0.01, 0.3); 
   }
 
-  // Store the current keypoints for the next frame
   previousKeypoints = poses;
 }
 
@@ -275,9 +269,9 @@ function drawPulsatingOrb(xCenter, yCenter, radius, numPoints, orbColor) {
     let angle = i * angleStep;
 
     if (happy == true) {
-      // Happy state: Pulsating behavior with noise
+      // Happy state with noise
       let noiseFactor = noise(i * 0.1, frameCount * 0.01);
-      let adjustedRadius = radius + map(noiseFactor, 0, 1, -10, 10); // Adjust radius with noise
+      let adjustedRadius = radius + map(noiseFactor, 0, 1, -10, 10); 
 
       let x = xCenter + cos(angle) * adjustedRadius;
       let y = yCenter + sin(angle) * adjustedRadius;
@@ -297,7 +291,7 @@ function drawPulsatingOrb(xCenter, yCenter, radius, numPoints, orbColor) {
       ellipse(x, y, 5, 5);
     } else if (scared == true) {
       let noiseFactor = noise(i * 10, frameCount * 0.01);
-      let adjustedRadius = radius + map(noiseFactor, 0, 1, -10, 10); // Adjust radius with noise
+      let adjustedRadius = radius + map(noiseFactor, 0, 1, -10, 10); 
 
       let x = xCenter + cos(angle) * adjustedRadius;
       let y = yCenter + sin(angle) * adjustedRadius;
@@ -310,7 +304,7 @@ function drawPulsatingOrb(xCenter, yCenter, radius, numPoints, orbColor) {
   giveOrbPersonality(radius, orbColor);
 }
 
-// Function to give the orb personality and react based on size and color
+// Function to give the orb personality and react based on size and color 
 function giveOrbPersonality(radius, orbColor) {
   if (poses.length > 0) {
     let pose = poses[0].pose;
@@ -329,9 +323,9 @@ function giveOrbPersonality(radius, orbColor) {
       (leftEye.y + rightEye.y) / 2
     );
 
-    let faceArea = faceWidth * faceHeight; // Approximate face area
+    let faceArea = faceWidth * faceHeight; 
 
-    // Handle scared reaction with probability
+    // scared reaction with probability
     if (scared === true && faceArea > 10000) {
       let probability = 0.005; // 0.5% chance to panic when scared
 
@@ -341,14 +335,14 @@ function giveOrbPersonality(radius, orbColor) {
           isPanic = true;
           panicStartTime = millis(); // Start the panic timer
         }
-        pulseSpeed = 0.03; // Increase pulse speed
+        pulseSpeed = 0.03; // pulse speed
         baseRadius = lerp(baseRadius, 30, 0.1); // Reduce the orb size
         console.log("You're too close! The orb is panicking!");
       }
     }
     // Handle boredClose reaction with probability
     else if (bored === true && faceArea > 10000) {
-      let probability = 0.002; // Set a smaller probability for boredClose reaction
+      let probability = 0.002; 
 
       if (random(1) < probability) {
         if (!isBoredClose) {
@@ -362,9 +356,9 @@ function giveOrbPersonality(radius, orbColor) {
         baseRadius = lerp(baseRadius, 150, 0.1); // Increase orb size smoothly
       }
     }
-    // Handle happyClose reaction with probability
+    // happy using probailbity 
     else if (happy === true && faceArea > 10000) {
-      let probability = 0.003; // Set a smaller probability for happyClose reaction
+      let probability = 0.003; // set probability
 
       if (random(1) < probability) {
         if (!isHappyClose) {
@@ -375,26 +369,26 @@ function giveOrbPersonality(radius, orbColor) {
 
         console.log("The orb is Happy and you are too close.");
         pulseSpeed = 3.005; // Happy pulse speed
-        baseRadius = lerp(baseRadius, 100, 0.1); // Keep a moderate orb size
+        baseRadius = lerp(baseRadius, 100, 0.1);
       }
     } else {
       pulseSpeed = 0.0075; // Normal pulse speed
     }
   }
 
-  // Check if panic duration has elapsed
+  // Check if panic is done
   if (isPanic && millis() - panicStartTime > panicDuration) {
     isPanic = false; // Reset panic mode
     console.log("The orb has calmed down from panic.");
   }
 
-  // Check if boredClose duration has elapsed
+  // Check if boredClose duration is done
   if (isBoredClose && millis() - boredStartTime > boredDuration) {
     isBoredClose = false; // Reset boredClose mode
     console.log("The orb is no longer bored.");
   }
 
-  // Check if HappyClose duration has elapsed
+  // Check if HappyClose duration is done
   if (isHappyClose && millis() - happyStartTime > happyDuration) {
     isHappyClose = false; // Reset HappyClose mode
     console.log("The orb is no longer Happy.");
@@ -402,6 +396,7 @@ function giveOrbPersonality(radius, orbColor) {
 }
 
 // Function to draw PoseNet video feed and keypoints
+// got help from 05 using "bodyparse" https://editor.p5js.org/dansakamoto/sketches/rJoEw4ucX 
 function drawPoseNetVideo() {
   image(video, width - 320, 0); // Draw video in top-right corner comment out when live
   stroke(255);
