@@ -8,8 +8,8 @@ let pulseSpeed = 0.0075; // Initial pulse speed factor
 
 let coldColor, hotColor; // Define the cold and hot colors
 
-let previousKeypoints = []; 
-let movementSpeed = 0; 
+let previousKeypoints = [];
+let movementSpeed = 0;
 let transitionFactor = 0.02; // Factor to adjust how fast size changes
 
 // Reactionstate
@@ -22,19 +22,19 @@ console.log("bored " + bored);
 console.log("scared " + scared);
 
 // Variables for panic mode
-let isPanic = false; 
-let panicStartTime = 0; 
+let isPanic = false;
+let panicStartTime = 0;
 let panicDuration = 5000; // Duration for panic effect (5 second)
 
 //variables for boredClose mode
-let isBoredClose = false; 
+let isBoredClose = false;
 let boredStartTime = 0;
 let boredDuration = 5000; // Duration for boredClose effect (5 second)
 
 // Variables for happyClose mode
-let isHappyClose = false; 
-let happyStartTime = 0; 
-let happyDuration = 5000; 
+let isHappyClose = false;
+let happyStartTime = 0;
+let happyDuration = 5000;
 
 function setup() {
   createCanvas(800, 800); // Main canvas for the pulsating orb and video
@@ -73,17 +73,15 @@ function modelReady() {
 }
 
 function draw() {
-  background(0, 20); 
+  background(0, 20);
 
   updateOrbSize();
 
-
   let radius =
-    baseRadius + abs(sin(frameCount * pulseSpeed)) * (maxRadius - baseRadius); 
+    baseRadius + abs(sin(frameCount * pulseSpeed)) * (maxRadius - baseRadius);
 
-
-  let colorThreshold = 130; 
-  let t = 0; 
+  let colorThreshold = 130;
+  let t = 0;
   if (radius > colorThreshold) {
     t = map(radius, colorThreshold, maxRadius, 0, 1);
   }
@@ -96,12 +94,10 @@ function draw() {
   } else if (isHappyClose) {
     orbColor = color(255, 223, 0);
   } else {
-    orbColor = lerpColor(coldColor, hotColor, t); 
+    orbColor = lerpColor(coldColor, hotColor, t);
   }
 
-
   drawPulsatingOrb(width / 2, height / 2, radius, 100, orbColor);
-
 
   drawPoseNetVideo();
 }
@@ -141,7 +137,7 @@ function switchCloseReactionState() {
 }
 
 // Function to switch reaction states automatically with random delay
-// got help from chat here 
+// got help from chat here
 function switchReactionState() {
   let randomDelay = random(8000, 15000); // Random delay between 8 and 15 seconds
 
@@ -197,14 +193,12 @@ function updateOrbSize() {
       }
     }
 
-
     let width = maxX - minX;
     let height = maxY - minY;
 
     let area = width * height;
 
     let exaggerationFactor = 4;
-
 
     baseRadius = lerp(
       baseRadius,
@@ -217,15 +211,13 @@ function updateOrbSize() {
       transitionFactor
     );
 
-
-    maxRadius = constrain(maxRadius, 100, 600); 
-
+    maxRadius = constrain(maxRadius, 100, 600);
 
     updateTransitionSpeedWithMovement();
   }
 }
 
-// got help from chat here 
+// got help from chat here
 function updateTransitionSpeedWithMovement() {
   if (poses.length > 0 && previousKeypoints.length > 0) {
     let totalSpeed = 0;
@@ -239,10 +231,9 @@ function updateTransitionSpeedWithMovement() {
         let previousKeypoint = previousKeypoints[i]?.pose?.keypoints[j];
 
         if (keypoint && previousKeypoint && keypoint.score > 0.1) {
-          
           let dx = keypoint.position.x - previousKeypoint.position.x;
           let dy = keypoint.position.y - previousKeypoint.position.y;
-          let distance = sqrt(dx * dx + dy * dy); 
+          let distance = sqrt(dx * dx + dy * dy);
 
           totalSpeed += distance;
           count++;
@@ -254,8 +245,7 @@ function updateTransitionSpeedWithMovement() {
       movementSpeed = totalSpeed / count;
     }
 
-    
-    transitionFactor = map(movementSpeed, 0, 100, 0.01, 0.3); 
+    transitionFactor = map(movementSpeed, 0, 100, 0.01, 0.3);
   }
 
   previousKeypoints = poses;
@@ -271,7 +261,7 @@ function drawPulsatingOrb(xCenter, yCenter, radius, numPoints, orbColor) {
     if (happy == true) {
       // Happy state with noise
       let noiseFactor = noise(i * 0.1, frameCount * 0.01);
-      let adjustedRadius = radius + map(noiseFactor, 0, 1, -10, 10); 
+      let adjustedRadius = radius + map(noiseFactor, 0, 1, -10, 10);
 
       let x = xCenter + cos(angle) * adjustedRadius;
       let y = yCenter + sin(angle) * adjustedRadius;
@@ -291,7 +281,7 @@ function drawPulsatingOrb(xCenter, yCenter, radius, numPoints, orbColor) {
       ellipse(x, y, 5, 5);
     } else if (scared == true) {
       let noiseFactor = noise(i * 10, frameCount * 0.01);
-      let adjustedRadius = radius + map(noiseFactor, 0, 1, -10, 10); 
+      let adjustedRadius = radius + map(noiseFactor, 0, 1, -10, 10);
 
       let x = xCenter + cos(angle) * adjustedRadius;
       let y = yCenter + sin(angle) * adjustedRadius;
@@ -304,7 +294,7 @@ function drawPulsatingOrb(xCenter, yCenter, radius, numPoints, orbColor) {
   giveOrbPersonality(radius, orbColor);
 }
 
-// Function to give the orb personality and react based on size and color 
+// Function to give the orb personality and react based on size and color
 function giveOrbPersonality(radius, orbColor) {
   if (poses.length > 0) {
     let pose = poses[0].pose;
@@ -323,7 +313,7 @@ function giveOrbPersonality(radius, orbColor) {
       (leftEye.y + rightEye.y) / 2
     );
 
-    let faceArea = faceWidth * faceHeight; 
+    let faceArea = faceWidth * faceHeight;
 
     // scared reaction with probability
     if (scared === true && faceArea > 10000) {
@@ -342,7 +332,7 @@ function giveOrbPersonality(radius, orbColor) {
     }
     // Handle boredClose reaction with probability
     else if (bored === true && faceArea > 10000) {
-      let probability = 0.002; 
+      let probability = 0.002;
 
       if (random(1) < probability) {
         if (!isBoredClose) {
@@ -356,7 +346,7 @@ function giveOrbPersonality(radius, orbColor) {
         baseRadius = lerp(baseRadius, 150, 0.1); // Increase orb size smoothly
       }
     }
-    // happy using probailbity 
+    // happy using probailbity
     else if (happy === true && faceArea > 10000) {
       let probability = 0.003; // set probability
 
@@ -396,17 +386,17 @@ function giveOrbPersonality(radius, orbColor) {
 }
 
 // Function to draw PoseNet video feed and keypoints
-// got help from 05 using "bodyparse" https://editor.p5js.org/dansakamoto/sketches/rJoEw4ucX 
+// got help from 05 using "bodyparse" https://editor.p5js.org/dansakamoto/sketches/rJoEw4ucX
 function drawPoseNetVideo() {
-  image(video, width - 320, 0); // Draw video in top-right corner comment out when live
+  // image(video, width - 320, 0); // Draw video in top-right corner comment out when live
   stroke(255);
-  strokeWeight(1); // change stroke to 0 when live
+  strokeWeight(0); // change stroke to 0 when live
   for (let i = 0; i < poses.length; i++) {
     let keypoints = poses[i].pose.keypoints;
     for (let j = 0; j < keypoints.length; j++) {
       let keypoint = keypoints[j];
       if (keypoint.score > 0.2) {
-        fill(0, 200, 0); // Green for detected keypoints. change to black when live
+        fill(0, 0, 0); // Green for detected keypoints. change to black when live
         ellipse(keypoint.position.x + width - 320, keypoint.position.y, 10, 10); // Draw keypoints
       }
     }
